@@ -16,11 +16,13 @@ localparam RESET_COUNTERS = 3'b010;
 localparam ACCEPT_COMMAND = 3'b100;
 //____________________________________________________________________________//
 reg [NUMBER_OF_COUNTERS - 1:0] counters_enable;
-reg                            counters_reset;
-reg                            data_rdy;
 reg                            cmd_accepted;
+reg                      [2:0] state;
+reg                      [2:0] next_state;
 //____________________________________________________________________________//
 wire [ ( NUMBER_OF_COUNTERS * COUNTERS_WIDTH ) - 1:0] counters_output;
+wire                                                  counters_reset;
+wire                                                  data_rdy;
 wire                       [NUMBER_OF_COUNTERS - 1:0] cmd_data;
 wire                                                  cmd_valid;
 wire                                                  clk_div;
@@ -30,19 +32,19 @@ wire                                                  spi_data_req;
 assign data_rdy       = ( state == READ_COUNTERS  );
 assign counters_reset = ( state == RESET_COUNTERS );
 //____________________________________________________________________________//
-//Clk devider
-clk_devider #(
-  DIVIDER_CNT_WIDTH ( 2 )
-) clk_devider (
+//Clk divider
+clk_divider #(
+  .DIVIDER_CNT_WIDTH ( 4 )
+) clk_divider_inst (
   .i_clk            ( i_clk    ),
   .i_rst            ( !i_rst_n ),
   .o_clk            ( clk_div  )     
 );
 //SPI
 spi_slave #( 
-  TX_BUFF_BITS  ( NUMBER_OF_COUNTERS * COUNTERS_WIDTH ),
-  RX_BUFF_BITS  ( NUMBER_OF_COUNTERS                  ) 
-) spi_slave (
+  .TX_BUFF_BITS  ( NUMBER_OF_COUNTERS * COUNTERS_WIDTH ),
+  .RX_BUFF_BITS  ( NUMBER_OF_COUNTERS                  ) 
+) spi_slave_inst (
   .i_clk        ( i_clk           ),
   .i_rst        ( !i_rst_n        ),
   .o_busy       ( spi_busy_flg    ),
@@ -59,10 +61,10 @@ spi_slave #(
 //Counters
 genvar i;
 generate
-  for( i = 0; i <= NUMBER_OF_COUNTERS; i = i + 1 ) begin : mdl_inst_gen_block
+  for( i = 0; i < NUMBER_OF_COUNTERS; i = i + 1 ) begin : mdl_inst_gen_block
     counter #( 
-      CNT_WIDTH   ( COUNTERS_WIDTH ) 
-    ) counter (
+      .CNT_WIDTH   ( COUNTERS_WIDTH ) 
+    ) counter_inst (
       .i_clk      ( clk_div                              ),
       .i_rst      ( !i_rst_n                             ),
       .i_cnt_en   ( counters_enable[i]                   ),  
@@ -101,9 +103,9 @@ always @* begin
       else
         next_state = IDLE;
     end
-    READ_COUNTES: begin
+    READ_COUNTERS: begin
       if( spi_busy_flg )
-        next_state = RESET_COUNTES;
+        next_state = RESET_COUNTERS;
       else
         next_state = READ_COUNTERS;
     end

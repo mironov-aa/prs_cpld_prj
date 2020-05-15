@@ -9,7 +9,7 @@ module spi_slave
   input  wire                        i_TX_valid,
   output wire                        o_TX_req, 
   output wire [RX_BUFF_BITS - 1:0]   o_RX_buff,
-  output wire                        o_RX_valid
+  output wire                        o_RX_valid,
   //SPI Interface
   output wire                        o_miso,
   input  wire                        i_ssel_n,
@@ -23,8 +23,7 @@ localparam TRANSMISSION = 2'b11;
 //____________________________________________________________________________//
 reg [TX_BUFF_BITS - 1:0]  TX_buff;
 reg                       TX_rdy;
-reg [TX_BUFF_BITS - 1:0]  RX_buff;
-reg                       RX_valid;  
+reg [TX_BUFF_BITS - 1:0]  RX_buff;  
 reg                [1:0]  state;
 reg                [1:0]  next_state;
 //____________________________________________________________________________//
@@ -34,7 +33,6 @@ assign o_busy     = ( state == TRANSMISSION );
 assign o_RX_valid = ( state == IDLE );
 assign o_TX_req   = ( state == DATA_REQ ) || ( state == DATA_WR);
 assign o_RX_buff  = RX_buff;
-assign o_RX_valid = RX_valid;
 //_________FSM________________________________________________________________//
 always @( posedge i_clk or posedge i_rst ) begin
   if( i_rst ) begin
@@ -91,6 +89,7 @@ always @( posedge i_sck or posedge i_rst ) begin
   if( i_rst ) begin
     TX_rdy  <= 1'b0;
     TX_buff <= {TX_BUFF_BITS{1'b0}};
+  end
   else if( (state == DATA_WR) && (TX_rdy == 1'b0) ) begin
     TX_buff <= i_TX_buff;
     TX_rdy  <= 1'b1;
