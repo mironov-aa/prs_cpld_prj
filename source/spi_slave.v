@@ -2,8 +2,8 @@ module spi_slave
 #( parameter TX_BUFF_BITS = 16,
    parameter RX_BUFF_BITS = 2 )
 ( input  wire                        i_clk,
-  input  wire    			             i_rst,
-  output wire    			             o_busy,
+  input  wire    			               i_rst,
+  output wire    			               o_busy,
   //TX & RX logic
   input  wire [TX_BUFF_BITS - 1:0]   i_TX_buff,
   input  wire                        i_TX_valid,
