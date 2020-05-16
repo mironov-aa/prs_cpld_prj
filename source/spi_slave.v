@@ -4,6 +4,7 @@ module spi_slave
 ( input  wire                        i_clk,
   input  wire    			               i_rst,
   output wire    			               o_busy,
+  output wire                        o_idle,
   //TX & RX logic
   input  wire [TX_BUFF_BITS - 1:0]   i_TX_buff,
   input  wire                        i_TX_valid,
@@ -16,22 +17,27 @@ module spi_slave
   input  wire                        i_mosi,
   input  wire                        i_sck      );
 //____________________________________________________________________________//
-localparam IDLE         = 2'b00;
-localparam DATA_REQ     = 2'b01;
-localparam DATA_WR      = 2'b10;
-localparam TRANSMISSION = 2'b11;
+localparam IDLE              = 2'b00;
+localparam DATA_REQ          = 2'b01;
+localparam DATA_WR           = 2'b10;
+localparam TRANSMISSION      = 2'b11;
+localparam CLK_COUNTER_WIDTH = 8;
 //____________________________________________________________________________//
-reg [TX_BUFF_BITS - 1:0]  TX_buff;
-reg                       TX_rdy;
-reg [TX_BUFF_BITS - 1:0]  RX_buff;  
-reg                [1:0]  state;
-reg                [1:0]  next_state;
+reg      [TX_BUFF_BITS - 1:0] TX_buff;
+reg                           TX_rdy;
+reg      [TX_BUFF_BITS - 1:0] RX_buff;
+reg [CLK_COUNTER_WIDTH - 1:0] clk_cnt;  
+reg                     [1:0] state;
+reg                     [1:0] next_state;
 //____________________________________________________________________________//
 assign o_miso     = ( i_ssel_n )? ( 1'bZ ): 
                                   ( TX_buff[TX_BUFF_BITS - 1] );
-assign o_busy     = ( state == TRANSMISSION );
-assign o_RX_valid = ( state == IDLE );
-assign o_TX_req   = ( state == DATA_REQ ) || ( state == DATA_WR);
+
+assign o_idle     = ( state   == IDLE );
+assign o_busy     = ( state   == TRANSMISSION );
+assign o_RX_valid = ( clk_cnt == RX_BUFF_BITS );
+assign o_TX_req   = ( state   == DATA_REQ ) || 
+                    ( state   == DATA_WR  );
 assign o_RX_buff  = RX_buff;
 //_________FSM________________________________________________________________//
 always @( posedge i_clk or posedge i_rst ) begin
@@ -77,11 +83,18 @@ always @* begin
 end
 //_________SPI RX shift registers_____________________________________________//
 always @( negedge i_sck or posedge i_rst ) begin
-  if( i_rst )
+  if( i_rst ) begin
+    clk_cnt <= {CLK_COUNTER_WIDTH{1'b0}};      
     RX_buff <= {RX_BUFF_BITS{1'b0}};
+  end
   else if( state == TRANSMISSION ) begin
     //Receive in LSB, shift up to MSB
     RX_buff <= {RX_buff[( RX_BUFF_BITS - 2 ):0], i_mosi}; 
+    if( clk_cnt == RX_BUFF_BITS ) begin
+      clk_cnt <= {CLK_COUNTER_WIDTH{1'b0}};
+    end else begin
+      clk_cnt <= clk_cnt + 1'b1;
+    end
   end
 end
 //_________SPI TX shift registers_____________________________________________//
@@ -90,7 +103,7 @@ always @( posedge i_sck or posedge i_rst ) begin
     TX_rdy  <= 1'b0;
     TX_buff <= {TX_BUFF_BITS{1'b0}};
   end
-  else if( (state == DATA_WR) && (TX_rdy == 1'b0) ) begin
+  else if( state == DATA_WR ) begin
     TX_buff <= i_TX_buff;
     TX_rdy  <= 1'b1;
   end 

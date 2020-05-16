@@ -13,10 +13,8 @@ module prs_cpld
 localparam IDLE           = 2'b00;
 localparam READ_COUNTERS  = 2'b01;
 localparam RESET_COUNTERS = 2'b10;
-localparam ACCEPT_COMMAND = 2'b11;
 //____________________________________________________________________________//
 reg [NUMBER_OF_COUNTERS - 1:0] counters_enable;
-reg                            cmd_accepted;
 reg                      [1:0] state;
 reg                      [1:0] next_state;
 //____________________________________________________________________________//
@@ -27,6 +25,7 @@ wire                       [NUMBER_OF_COUNTERS - 1:0] cmd_data;
 wire                                                  cmd_valid;
 wire                                                  clk_div;
 wire                                                  spi_busy_flg;
+wire                                                  spi_idle_flg;
 wire                                                  spi_data_req;
 //____________________________________________________________________________//
 assign data_rdy       = ( state == READ_COUNTERS  );
@@ -48,6 +47,7 @@ spi_slave #(
   .i_clk        ( i_clk           ),
   .i_rst        ( !i_rst_n        ),
   .o_busy       ( spi_busy_flg    ),
+  .o_idle       ( spi_idle_flg    ),
   .i_TX_buff    ( counters_output ),
   .i_TX_valid   ( data_rdy        ),
   .o_TX_req     ( spi_data_req    ),
@@ -78,12 +78,10 @@ endgenerate
 //****************************************************************************//
 always @( posedge i_clk or negedge i_rst_n ) begin
   if( !i_rst_n ) begin
-    cmd_accepted    <= 1'b0;
     counters_enable <= {NUMBER_OF_COUNTERS{1'b0}};
   end
-  else if( (state == ACCEPT_COMMAND) && cmd_valid ) begin
+  else if( cmd_valid ) begin   
     counters_enable <= cmd_data;
-    cmd_accepted    <= 1'b1;
   end
 end
 //state register
@@ -106,19 +104,13 @@ always @* begin
     READ_COUNTERS: begin
       if( spi_busy_flg )
         next_state = RESET_COUNTERS;
-      else if( cmd_valid )
+      else if( spi_idle_flg )
         next_state = IDLE;
       else
         next_state = READ_COUNTERS;
     end
     RESET_COUNTERS: begin
-        next_state = ACCEPT_COMMAND;
-    end
-    ACCEPT_COMMAND: begin
-      if( cmd_accepted )
         next_state = IDLE;
-      else
-        next_state = ACCEPT_COMMAND;
     end
     default:
       next_state = IDLE;
