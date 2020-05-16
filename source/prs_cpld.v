@@ -81,7 +81,7 @@ always @( posedge i_clk or negedge i_rst_n ) begin
     cmd_accepted    <= 1'b0;
     counters_enable <= {NUMBER_OF_COUNTERS{1'b0}};
   end
-  else if( state == ACCEPT_COMMAND ) begin
+  else if( (state == ACCEPT_COMMAND) && cmd_valid ) begin
     counters_enable <= cmd_data;
     cmd_accepted    <= 1'b1;
   end
@@ -106,6 +106,8 @@ always @* begin
     READ_COUNTERS: begin
       if( spi_busy_flg )
         next_state = RESET_COUNTERS;
+      else if( cmd_valid )
+        next_state = IDLE;
       else
         next_state = READ_COUNTERS;
     end
