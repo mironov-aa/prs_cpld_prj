@@ -1,11 +1,11 @@
 module counter
 #( parameter CNT_WIDTH = 8 )
-( input  wire i_clk,
-  input  wire i_rst,
-  input  wire i_cnt_en,
-  input  wire i_cnt_clk,
-  input  wire i_cnt_rst,
-  output wire o_cnt         );
+( input  wire                   i_clk,
+  input  wire                   i_rst,
+  input  wire                   i_cnt_en,
+  input  wire                   i_cnt_clk,
+  input  wire                   i_cnt_rst,
+  output wire [CNT_WIDTH - 1:0] o_cnt         );
 //____________________________________________________________________________//
 localparam ACTIVE_CNT_WIDTH = 4;
 //____________________________________________________________________________//
