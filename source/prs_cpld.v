@@ -10,15 +10,15 @@ module prs_cpld
   input  wire                            i_sck,
   input  wire                            i_ssel_n );
 //____________________________________________________________________________//
-localparam IDLE           = 3'b000;
-localparam READ_COUNTERS  = 3'b001;
-localparam RESET_COUNTERS = 3'b010;
-localparam ACCEPT_COMMAND = 3'b100;
+localparam IDLE           = 2'b00;
+localparam READ_COUNTERS  = 2'b01;
+localparam RESET_COUNTERS = 2'b10;
+localparam ACCEPT_COMMAND = 2'b11;
 //____________________________________________________________________________//
 reg [NUMBER_OF_COUNTERS - 1:0] counters_enable;
 reg                            cmd_accepted;
-reg                      [2:0] state;
-reg                      [2:0] next_state;
+reg                      [1:0] state;
+reg                      [1:0] next_state;
 //____________________________________________________________________________//
 wire [ ( NUMBER_OF_COUNTERS * COUNTERS_WIDTH ) - 1:0] counters_output;
 wire                                                  counters_reset;
