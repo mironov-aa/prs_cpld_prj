@@ -74,7 +74,7 @@ always @( negedge i_sck or posedge i_rst ) begin : s_RX_clk_counter
     clk_cnt <= clk_cnt + 1'b1;
   end
 end
-always @( negedge i_clk or posedge i_rst ) begin : s_RX_buff_capture
+always @( posedge i_clk or posedge i_rst ) begin : s_RX_buff_capture
   if( i_rst ) begin
     RX_buff <= {RX_BUFF_BITS{1'b0}};
   end
