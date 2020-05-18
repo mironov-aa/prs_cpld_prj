@@ -9,33 +9,36 @@ module counter
 //____________________________________________________________________________//
 localparam ACTIVE_CNT_WIDTH = 4;
 //____________________________________________________________________________//
-reg                             act_flg;
 reg   [ACTIVE_CNT_WIDTH - 1:0]  act_cnt;
 reg          [CNT_WIDTH - 1:0]  cnt;
 //____________________________________________________________________________//
-assign o_cnt = cnt;
-//****************************************************************************//
-always @( posedge i_clk or posedge i_rst or posedge i_cnt_rst ) begin
+wire cnt_inc;
+//____________________________________________________________________________//
+assign o_cnt   = cnt;
+assign cnt_inc = ( act_cnt == {ACTIVE_CNT_WIDTH{1'b1}} )
+//____________________________________________________________________________//
+always @( posedge i_clk or posedge i_rst ) begin : s_act_lvl_counter
   if( i_rst ) begin
-    act_cnt  <= 1'b0;
-    act_flg  <= 1'b0;
-    cnt      <= { CNT_WIDTH{1'b0} };
+    act_cnt <= {ACTIVE_CNT_WIDTH{1'b0}}
+  end
+  else if( i_cnt_clk ) begin
+    if( act_cnt != {ACTIVE_CNT_WIDTH{1'b1}} ) begin
+      act_cnt <= act_cnt + 1'b1;
+    end
+  end else begin
+    act_cnt <= {ACTIVE_CNT_WIDTH{1'b0}}
+  end
+end
+always @( posedge cnt_inc or posedge i_rst or posedge i_cnt_rst ) begin :cnt_inc
+  if( i_rst ) begin
+    cnt <= { CNT_WIDTH{1'b0} };
   end
   else if( i_cnt_rst ) begin
-    cnt <= {CNT_WIDTH{1'b0}};
-  end
-  else if( i_cnt_en ) begin
-    if( (act_cnt == {ACTIVE_CNT_WIDTH{1'b1}}) && (act_flg == 1'b0) ) begin
-      act_flg  <= 1'b1;
-      cnt      <= cnt + 1'b1;   
-    end else begin
-      if( i_cnt_clk ) begin
-        act_cnt <= act_cnt + 1'b1;
-      end else begin
-        act_cnt <= 1'b0;
-        act_flg <= 1'b0;
-      end
-    end
-  end
+    cnt <= { CNT_WIDTH{1'b0} };
+  end else begin
+    if( i_cnt_en ) begin
+      cnt <= cnt + 1'b1;
+    end  
+  end  
 end
 endmodule
