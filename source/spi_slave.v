@@ -68,7 +68,7 @@ always @( negedge i_sck or posedge i_rst ) begin : s_RX_clk_counter
   if( i_rst ) begin
      clk_cnt <= {CLK_COUNTER_WIDTH{1'b0}};
   end
-  else if( clk_cnt == RX_BUFF_BITS )
+  else if( clk_cnt == RX_BUFF_BITS ) begin
     clk_cnt <= {CLK_COUNTER_WIDTH{1'b0}};
   end else begin
     clk_cnt <= clk_cnt + 1'b1;
@@ -94,7 +94,7 @@ always @* begin : c_fsm_next_state_logic
   case( state )
     IDLE: begin
       if( !i_ssel_n )
-        next_state = DATA_REQ;
+        next_state = CAPTURE;
       else
         next_state = IDLE;
     end
